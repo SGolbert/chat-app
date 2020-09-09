@@ -3,12 +3,15 @@
 const form = document.querySelector("form");
 const userName = document.getElementById("username");
 const chatRoom = document.getElementById("room");
+const customRoom = document.getElementById("custom-room");
 const color = document.getElementById("color");
 
 form.addEventListener("submit", (e) => {
   e.preventDefault();
-  const url =
-    "/users/" + chatRoom.value + "/" + encodeURIComponent(userName.value);
+
+  const room = customRoom.value === "" ? chatRoom.value : customRoom.value;
+
+  const url = "/users/" + room + "/" + encodeURIComponent(userName.value);
 
   fetch(url).then((response) => {
     if (!response.ok) {
@@ -18,7 +21,7 @@ form.addEventListener("submit", (e) => {
         "/chat.html?username=" +
         userName.value +
         "&room=" +
-        chatRoom.value +
+        room +
         "&color=" +
         color.value;
 

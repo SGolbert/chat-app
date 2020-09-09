@@ -4,18 +4,44 @@ socket.on("welcome", (msg) => {
   console.log(msg);
 });
 
+// Elements
 const form = document.getElementById("input-form");
 const input = document.getElementById("user-msg");
-input.focus();
+const chatBox = document.getElementById("chat-box");
+const connectedUsers = document.getElementById("connected-users");
 const roomLabel = document.getElementById("room");
-
 const roomForm = document.getElementById("change-room");
 const roomSelector = document.getElementById("room-selector");
+
+input.focus();
 
 const params = new URLSearchParams(window.location.search);
 const userParam = params.get("username");
 const roomParam = params.get("room");
 const colorParam = params.get("color");
+
+const autoscroll = () => {
+  // New message element
+  const $newMessage = chatBox.lastElementChild;
+
+  // Height of the new message
+  const newMessageStyles = getComputedStyle($newMessage);
+  const newMessageMargin = parseInt(newMessageStyles.marginBottom);
+  const newMessageHeight = $newMessage.offsetHeight + newMessageMargin;
+
+  // Visible height
+  const visibleHeight = chatBox.offsetHeight;
+
+  // Height of messages container
+  const containerHeight = chatBox.scrollHeight;
+
+  // How far have I scrolled?
+  const scrollOffset = chatBox.scrollTop + visibleHeight;
+
+  if (containerHeight - newMessageHeight <= scrollOffset) {
+    chatBox.scrollTop = chatBox.scrollHeight;
+  }
+};
 
 roomLabel.innerHTML = roomParam;
 
@@ -47,9 +73,6 @@ form.addEventListener("submit", (e) => {
   input.focus();
 });
 
-const chatBox = document.getElementById("chat-box");
-const connectedUsers = document.getElementById("connected-users");
-
 socket.on("serverMessage", (msg, room, color) => {
   const newChatLine = document.createElement("p");
   const newContent = document.createTextNode(msg);
@@ -57,6 +80,7 @@ socket.on("serverMessage", (msg, room, color) => {
   newChatLine.appendChild(newContent);
 
   chatBox.appendChild(newChatLine);
+  autoscroll();
 });
 
 socket.on("userConnected", (userArray) => {

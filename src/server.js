@@ -95,9 +95,15 @@ io.on("connection", (socket) => {
 });
 
 app.get("/users/:room/:user", (req, res) => {
-  const match = rooms[req.params.room].filter(
-    (user) => user.name === req.params.user
-  );
+  const room = req.params.room;
+  const user = req.params.user;
+
+  if (!Object.keys(rooms).includes(room)) {
+    rooms[room] = [];
+    res.send();
+  }
+
+  const match = rooms[room].filter((userEntry) => userEntry.name === user);
   if (match.length === 0) {
     res.send();
   } else {
