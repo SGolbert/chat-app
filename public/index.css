@@ -1,0 +1,16 @@
+form {
+  align-items: left;
+  display: flex;
+  flex-direction: column;
+}
+
+label,
+button {
+  margin: 10px 0;
+  width: 100px;
+}
+
+select,
+input {
+  width: 300px;
+}
