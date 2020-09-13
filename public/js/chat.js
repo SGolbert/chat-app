@@ -73,7 +73,7 @@ form.addEventListener("submit", (e) => {
   input.focus();
 });
 
-socket.on("serverMessage", (msg, room, color) => {
+socket.on("serverMessage", (msg, color) => {
   const newChatLine = document.createElement("p");
   const newContent = document.createTextNode(msg);
   newChatLine.setAttribute("style", `color: ${color};`);
@@ -81,6 +81,20 @@ socket.on("serverMessage", (msg, room, color) => {
 
   chatBox.appendChild(newChatLine);
   autoscroll();
+});
+
+socket.on("loadHistory", (history) => {
+  for (msgObj of history) {
+    const finalMsg = `${msgObj.time} - ${msgObj.username}: ${msgObj.msg}`;
+
+    const newChatLine = document.createElement("p");
+    const newContent = document.createTextNode(finalMsg);
+    newChatLine.setAttribute("style", `color: ${msgObj.color};`);
+    newChatLine.appendChild(newContent);
+
+    chatBox.appendChild(newChatLine);
+    autoscroll();
+  }
 });
 
 socket.on("userConnected", (userArray) => {

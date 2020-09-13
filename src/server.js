@@ -6,7 +6,6 @@ const Filter = require("bad-words");
 const moment = require("moment");
 
 const app = express();
-// const router = express.Router()
 const server = http.createServer(app);
 const io = socketio(server);
 
@@ -20,10 +19,22 @@ app.use((err, req, res, next) => {
 });
 
 let rooms = {
-  Mannheim: [],
-  Heidelberg: [],
-  Bochum: [],
-  Dortmund: [],
+  Mannheim: {
+    users: [],
+    msgHistory: [],
+  },
+  Heidelberg: {
+    users: [],
+    msgHistory: [],
+  },
+  Bochum: {
+    users: [],
+    msgHistory: [],
+  },
+  Dortmund: {
+    users: [],
+    msgHistory: [],
+  },
 };
 
 io.on("connection", (socket) => {
@@ -38,13 +49,19 @@ io.on("connection", (socket) => {
 
   console.log(userParam + " joined room " + roomParam);
 
-  rooms[roomParam].push({
+  rooms[roomParam].users.push({
     id: socket.id,
     name: userParam,
     color: colorParam,
   });
 
   socket.emit("welcome", "Welcome to the chat app!");
+
+  const historyStart = Math.max(rooms[roomParam].msgHistory.length - 50 - 1, 0);
+  socket.emit(
+    "loadHistory",
+    rooms[roomParam].msgHistory.slice(historyStart, historyStart + 50)
+  );
 
   socket.on("join", (username, room) => {
     socket.join(room);
@@ -54,7 +71,7 @@ io.on("connection", (socket) => {
       .to(room)
       .emit("serverMessage", `${username} has joined!`, room, "darkmagenta");
 
-    io.to(room).emit("userConnected", rooms[room]);
+    io.to(room).emit("userConnected", rooms[room].users);
   });
 
   // User sends a message
@@ -72,7 +89,14 @@ io.on("connection", (socket) => {
     const time = now.format("HH:mm");
     const finalMsg = `${time} - ${userName}: ${msg}`;
 
-    io.to(roomParam).emit("serverMessage", finalMsg, roomParam, color);
+    rooms[roomParam].msgHistory.push({
+      time,
+      msg,
+      username: userName,
+      color: colorParam,
+    });
+
+    io.to(roomParam).emit("serverMessage", finalMsg, color);
     callback(false, "Delivered!");
   });
 
@@ -80,7 +104,7 @@ io.on("connection", (socket) => {
   socket.on("disconnect", () => {
     console.log(userParam + " left room " + roomParam);
 
-    rooms[roomParam] = rooms[roomParam].filter((user) => {
+    rooms[roomParam].users = rooms[roomParam].users.filter((user) => {
       return user.id !== socket.id;
     });
 
@@ -90,7 +114,9 @@ io.on("connection", (socket) => {
       roomParam,
       "darkred"
     );
-    socket.broadcast.to(roomParam).emit("userConnected", rooms[roomParam]);
+    socket.broadcast
+      .to(roomParam)
+      .emit("userConnected", rooms[roomParam].users);
   });
 });
 
@@ -99,11 +125,16 @@ app.get("/users/:room/:user", (req, res) => {
   const user = req.params.user;
 
   if (!Object.keys(rooms).includes(room)) {
-    rooms[room] = [];
+    rooms[room] = {
+      users: [],
+      msgHistory: [],
+    };
     res.send();
   }
 
-  const match = rooms[room].filter((userEntry) => userEntry.name === user);
+  const match = rooms[room].users.filter(
+    (userEntry) => userEntry.name === user
+  );
   if (match.length === 0) {
     res.send();
   } else {
